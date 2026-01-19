@@ -4,6 +4,8 @@
 (struct edge [v1 v2])
 (struct directed-graph [edge-list])
 
+
+
 ; Problem 2
 
 ; read-graph reads in a graph from a file and
@@ -47,40 +49,33 @@
                  (list (append (list (edge-v1 a)) (list (edge-v2 a))))
                  (represent-graph-helper b)))))
 
-; (define y '((A (B C)) (B (A C)) (C (A B)) (D ())))
-; (represent-graph (directed-graph-edge-list (read-graph "a1-input1.txt")))
-; (represent-graph (directed-graph-edge-list (make-graph y)))
-; (represent-graph (read-graph "a1-input1.txt"))
-; (represent-graph (make-graph y))
- 
+
+
 ; Problem 3
 ; graph-to-hash is a helper function that converts
 ; our directed graph structure to a hash table.
-(define graph-to-hash
-  (lambda (graph)
-    (define hash_set (make-hash))
-    (for/list ([e (directed-graph-edge-list graph)])
-      (cond
-        [(hash-has-key? hash_set (edge-v1 e))
-         (define current_val (hash-ref hash_set (edge-v1 e)))
-         (hash-set! hash_set (edge-v1 e) (append current_val (list (edge-v2 e))))]
-        [else
-         (hash-set! hash_set (edge-v1 e) (list (edge-v2 e)))]))
-    hash_set))
+(define (graph-to-hash graph)
+  (define hash_set (make-hash))
+  (for/list ([e (directed-graph-edge-list graph)])
+    (cond
+      [(hash-has-key? hash_set (edge-v1 e))
+       (define current_val (hash-ref hash_set (edge-v1 e)))
+       (hash-set! hash_set (edge-v1 e) (append current_val (list (edge-v2 e))))]
+      [else
+       (hash-set! hash_set (edge-v1 e) (list (edge-v2 e)))]))
+  hash_set)
 
 ; print-graph prints a graph in the same s-expression representation (provided in the file).
 ; * NOTE: It uses the pretty-print function.
-(define print-graph
-  (lambda (graph)
-    (define hash_set (graph-to-hash graph))
-    (print hash_set)
-    (define keys (hash-keys hash_set))
-    (define res
-      (for/list ([x (hash-keys hash_set)])
-        (list x (hash-ref hash_set x))))
-    (pretty-print res)))
+(define (print-graph graph)
+  (define hash_set (graph-to-hash graph))
+  (define keys (hash-keys hash_set))
+  (define res
+    (for/list ([x (hash-keys hash_set)])
+      (list x (hash-ref hash_set x))))
+  (pretty-print res))
 
-; (print-graph (read-graph "a1-input1.txt"))
+
 
 ; Problem 4
 (define (spanning-tree g)
@@ -98,26 +93,6 @@
                                  (append (list (edge-v1 a) (edge-v2 a)) skip-list)
                                  b))]))))
 
-; (define rg (read-graph "a1-input1.txt"))
-; rg
-; (represent-graph (spanning-tree rg))
-; (spanning-tree rg)
-#; (represent-graph (spanning-tree (make-graph '((A (B D C))
-                                                 (B (A C D))
-                                                 (C (A B D))
-                                                 (D (A B C))
-                                                 ))))
-#; (spanning-tree (make-graph '((A (B D C))
-                                (B (A C D))
-                                (C (A B D))
-                                (D (A B C))
-                                )))
-; edsls?
-; regex
-; json
-; latex sublanguages
-; gdscript
-; glsl
 
 (require rackunit)
 ; P1 && P2
