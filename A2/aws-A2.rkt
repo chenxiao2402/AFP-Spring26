@@ -1,5 +1,7 @@
 #lang racket
 
+(require rackunit)
+
 ;; An Expression is one of:
 ;; - (if Expression Expression Expression)
 ;; - (lambda (Var) Expression)
@@ -104,9 +106,6 @@
 (extend-syntax! 'cond
                 (λ (s)
                   (match s
-                    #; ; no need for this case
-                    [`(cond)
-                     (void)]
                     [`(cond
                         [else ,S-expression1-2])
                      `,S-expression1-2]
@@ -126,9 +125,6 @@
                           (cond ,@exprs))]
                     )))
 
-(require rackunit)
-
-; (check-equal? (interp `(cond)) (void))
 (check-equal? (interp `(cond
                          [else 0])) 0)
 (check-equal? (interp `(cond
@@ -162,24 +158,9 @@
                          [0 5]
                          [else 6])) 6)
 
-(match `(case 1
-          (1 2))
-  [`(case ,S-expression0
-      [,Variable1 ,S-expression1]) S-expression1])
 
 (extend-syntax! 'case (λ (s)
                         (match s
-                          #; ; no need for this case
-                          [`(case ,S-expression0
-                              [else ,S-expressionN])
-                           S-expressionN]
-                          
-                          [`(case ,S-expression0
-                              [,Variable1 ,S-expression1])
-                           `(let ((temporary-variable ,S-expression0))
-                              (cond
-                                [(symbol=? temporary-variable ,Variable1) ,S-expression1]))]
-                          
                           [`(case ,S-expression0
                               [,Variable1 ,S-expression1]
                               ,exprs ...
@@ -190,9 +171,7 @@
                                 ,@(map (λ (exp)
                                          (match exp
                                            [`[,variableN ,expressionN]
-                                            `[(symbol=? temporary-variable ,variableN) ,expressionN]]
-                                           [`[else ,expressionN]
-                                            `[else ,expressionN]]))
+                                            `[(symbol=? temporary-variable ,variableN) ,expressionN]]))
                                        exprs)))]
                           )))
 
