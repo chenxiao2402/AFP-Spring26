@@ -35,7 +35,8 @@
      (expand ((get-macro m) s))]
     [`(,op ,operand ...)
      `(,(expand op) ,@(map expand operand))]
-    [(? void?) s])) ;;;;;;; added ;;;;;;;
+    [(? void?) s] ;;;;;;; added ;;;;;;;
+    ))
 
 (extend-syntax! 'or
                 (lambda (s)
@@ -58,9 +59,11 @@
 
 
 
+;; interpret the program
 (define (interp s)
   (let loop ([s (expand s)])
     (match s
+      [`(if ,(app loop #f) ,e1 ,e2) (loop e2)] ;;;;;;; added ;;;;;;;
       [`(if ,(app loop 0) ,e1 ,e2) (loop e2)]
       [`(if ,(app loop x) ,e1 ,e2) (loop e1)]
       [`(lambda (,x) ,body)
@@ -70,6 +73,8 @@
       [`(,f ,e ...) (apply (loop f) (map loop e))]
       [(? number?) s]
       [(? void?) s] ;;;;;;; added ;;;;;;;
+      [(? symbol?) s] ;;;;;;; added ;;;;;;;
+      [(? procedure?) s] ;;;;;;; added ;;;;;;;
       )))
 
 (define (subst x v s)
@@ -84,6 +89,7 @@
          `(lambda (,x0)
             ,(subst x v b)))]
     [`+ +]
+    [`symbol=? symbol=?]  ;;;;;;; added ;;;;;;;
     [(list e ...) (map (lambda (e) (subst x v e)) e)]
     [_ s]))
 
@@ -94,11 +100,13 @@
 
 (interp `(let ([x 10]) (or 0 x)))
 
+;; Main code for assignment 2
 (extend-syntax! 'cond
                 (λ (s)
                   (match s
+                    #; ; no need for this case
                     [`(cond)
-                     `,(void)]
+                     (void)]
                     [`(cond
                         [else ,S-expression1-2])
                      `,S-expression1-2]
@@ -120,7 +128,7 @@
 
 (require rackunit)
 
-(check-equal? (interp `(cond)) (void))
+; (check-equal? (interp `(cond)) (void))
 (check-equal? (interp `(cond
                          [else 0])) 0)
 (check-equal? (interp `(cond
@@ -153,3 +161,76 @@
                          [0 4]
                          [0 5]
                          [else 6])) 6)
+
+(match `(case 1
+          (1 2))
+  [`(case ,S-expression0
+      [,Variable1 ,S-expression1]) S-expression1])
+
+(extend-syntax! 'case (λ (s)
+                        (match s
+                          #; ; no need for this case
+                          [`(case ,S-expression0
+                              [else ,S-expressionN])
+                           S-expressionN]
+                          
+                          [`(case ,S-expression0
+                              [,Variable1 ,S-expression1])
+                           `(let ((temporary-variable ,S-expression0))
+                              (cond
+                                [(symbol=? temporary-variable ,Variable1) ,S-expression1]))]
+                          
+                          [`(case ,S-expression0
+                              [,Variable1 ,S-expression1]
+                              ,exprs ...
+                              )
+                           `(let ((temporary-variable ,S-expression0))
+                              (cond
+                                [(symbol=? temporary-variable ,Variable1) ,S-expression1]
+                                ,@(map (λ (exp)
+                                         (match exp
+                                           [`[,variableN ,expressionN]
+                                            `[(symbol=? temporary-variable ,variableN) ,expressionN]]
+                                           [`[else ,expressionN]
+                                            `[else ,expressionN]]))
+                                       exprs)))]
+                          )))
+
+(check-equal? (interp `(case x
+                         [y 1])) (void))
+
+(check-equal? (interp `(case x
+                         [x 1])) 1)
+
+(check-equal? (interp `(case x
+                         [x 2]
+                         [y 3])) 2)
+
+(check-equal? (interp `(case x
+                         [z 1]
+                         [y 2]
+                         [x 3])) 3)
+
+(check-equal? (interp `(case x
+                         [z 1]
+                         [y 2]
+                         [xx 3]
+                         [w 4])) (void))
+
+
+(case (- 7 5)
+  [(1 2 3) 'small]
+  [(10 11 12) 'big]
+  [else 'medium])
+
+(case (+ 7 50)
+  [(1 2 3) 'small]
+  [(10 11 12) 'big]
+  [else 'medium])
+
+(case (+ 7 5)
+  [(1 2 3) 'small]
+  [(10 11 12) 'big]
+  [else 'medium])
+
+;; get to fixing symbols later
