@@ -89,6 +89,9 @@
     ['- -]
     ['* *]
     ['+ +]
+    ['car car]
+    ['cdr cdr]
+    ['empty? empty?]
     [_ s]))
 
 
@@ -148,3 +151,20 @@
                         ,s-expr2)])))
 
 (check-equal? (interp `(letrec ([fac (lambda (n) (if (zero? n) 1 (* n (fac (- n 1)))))]) (fac 5))) 120)
+
+
+
+
+
+(extend-syntax! 'for/list
+                (lambda (s)
+                  (match s
+                    [`(for/list ((,var0 ,s-expr0)) ,s-expr1)
+                     `(letrec ([temp-proc (lambda (n)
+                                            (if (empty? n)
+                                                '()
+                                                (let ((,var0 (car n)))
+                                                  (cons ,s-expr1 (temp-proc (cdr n))))))])
+                        (temp-proc ,s-expr0))])))
+
+(interp '(for/list ([e '(1 2 3 4 5)]) (add1 e)))
