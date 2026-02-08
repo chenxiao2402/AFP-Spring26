@@ -6,19 +6,27 @@
 ; If all of the expressions evaluate to a non-#false value, all produces the list of the results not including any values which are #true; otherwise it produces #false.
 ; The all form should short-circuit; that is, this expression should not print anything: (all #false (print 'hi))
 
+
+
+(define-syntax fcons
+  (syntax-parser
+    [(_ e es)
+     #'(if (equal? es #f) #f (cons e es))]))
+
 (define-syntax all
   (syntax-parser
     [(_ e1 es ...)
-     #'(let [(eval e1)]
-         (if eval
-             (if (equal? eval #t)
-                 (all es ...)
-                 (cons eval (all es ...)))
-             #f))]
-    [(_) #''()]))
+    #'(let [(eval e1)]
+          (if eval
+               (if (equal? eval #t)
+                   (all es ...)
+                   (fcons eval (all es ...)))
+              #f))]
+      [(_) #''()]))
 
 
 (check-equal? (all #f 1 2 3) #f)
+(check-equal? (all 1 2 3 #f) #f)
 (check-equal? (all #t 1 2 3) '(1 2 3))
 (check-equal? (all #f (print 'hi)) #f)
 (check-equal? (all) '())
