@@ -3,7 +3,6 @@
 (require rackunit)
 (require "a4-spec-prog.rkt")
 
-
 (check-equal? name 'AwsLukeXiao)
 (check-equal? author 'UncleSamsHolyTrinity)
 (check-equal? university 'IU)

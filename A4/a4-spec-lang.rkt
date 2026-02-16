@@ -2,16 +2,13 @@
 
 (require (for-syntax syntax/parse))
 
-
-
 (begin-for-syntax
   (define-syntax-class def
     (pattern (define key:id val:id)))
   
   (define-syntax-class defs
     (pattern [d:def ...]
-      #:with (ids ...) #'(d.key ...)))
-)
+      #:with (ids ...) #'(d.key ...))))
 
 (define-syntax (my-module-begin stx)
   (syntax-parse stx
