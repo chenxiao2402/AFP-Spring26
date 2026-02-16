@@ -5,11 +5,9 @@
 (define-syntax (my-module-begin stx)
   (syntax-parse stx
     [(_ form ...)
-
      (define define-expr?
        (lambda (x)
          (eqv? (car (syntax->datum x)) 'define)))
-
      (define not-define-expr?
        (lambda (x)
          (not (define-expr? x))))

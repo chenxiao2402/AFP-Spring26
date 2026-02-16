@@ -1,4 +1,4 @@
-#lang s-exp "a4-echo-lang.rkt"
+#lang s-exp "echo.rkt"
 
 "Uncle Sam's Holy Trinity"
 (displayln "hello")

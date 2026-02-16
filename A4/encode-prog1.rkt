@@ -1,4 +1,4 @@
-#lang s-exp "a4-encode-lang.rkt"
+#lang s-exp "encode.rkt"
 
 85 110 99 108 101 32 
 83 97 109 39 115 32 

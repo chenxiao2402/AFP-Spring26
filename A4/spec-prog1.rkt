@@ -1,4 +1,4 @@
-#lang s-exp "a4-spec-lang.rkt"
+#lang s-exp "spec.rkt"
 
 (define name AwsLukeXiao)
 (define author UncleSamsHolyTrinity)
