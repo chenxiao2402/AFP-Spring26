@@ -24,11 +24,10 @@
   (define-syntax-class exp #:datum-literals (+ - * / let-values Whatever let lambda)
     ; Lab 5: Adding-zero Elimination
     (pattern (+ a 0)
-      #:when (not (symbol? (syntax->datum #'a)))
-      #:with code #'(if (number? a) a (+ a 0)))
+      #:with code (if (number? (syntax->datum #'a)) #'a #'(+ a 0)))
+    
     (pattern (+ 0 a)
-      #:when (not (symbol? (syntax->datum #'a)))
-      #:with code #'(if (number? a) a (+ 0 a)))
+      #:with code (if (number? (syntax->datum #'a)) #'a #'(+ 0 a)))
     
     ; Lab 5: Let-Values Elimination
     (pattern (let-values ([a] e) b)
