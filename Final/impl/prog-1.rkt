@@ -1,5 +1,5 @@
 #lang s-exp "lang.rkt"
-#;#;
+#;
 (Staff 42
        24
        "a"
@@ -8,6 +8,10 @@
        (defv x 5)
        241
        #;x)
-(Staff (defv Staff 5)
+(Staff (defv A0 5)
        'a
-       Staff) 
+       A0)
+
+#;(defv A0 5)
+
+#; (defv x 5) ; this will return an error
