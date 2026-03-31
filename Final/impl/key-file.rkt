@@ -1,37 +1,28 @@
 #lang racket
-(require (for-syntax syntax/parse racket/list racket/match racket/dict))
 
-(define-for-syntax keys2
-                  (map string->symbol
-                       (flatten
-                        (append
+(define keys
+  (map string->symbol
+       (flatten
+        (append
+         (for/list ([ltr '(A B C D E F G)])
+           (for/list ([num (map add1 (range 7))])
+             (if (memv ltr '(A C D F G))
+                 (list
+                  (string-append (symbol->string ltr) (number->string num))
+                  (string-append (symbol->string ltr) "#" (number->string num))
+                  )
+                 (string-append (symbol->string ltr) (number->string num)))))
+         '("A0" "A#0" "B0" "C8")
+         ))))
 
-                         (for/list ([ltr '(A B C D E F G)])
-                           (for/list ([num (map add1 (range 7))])
-                             (string-append (symbol->string ltr)
-                                            (number->string num))))
-
-                         (for/list ([ltr '(A C D F G)])
-                           (for/list ([num (map add1 (range 7))])
-                             (string-append (symbol->string ltr)
-                                            "#"
-                                            (number->string num))))
-
-                         '("A0" "A#0" "B0" "C8")
-                         ))))
-
-(define-for-syntax key-dict (make-hash))
-(define-for-syntax (key-dict-builder dict k v)
-  (match k
+(define (key-dict-builder dict key)
+  (match key
     ('() dict)
-    ((cons a b) (begin (dict-set! dict a (car v))
-                     (key-dict-builder dict b v)))))
+    ((cons a b) (begin (dict-set! dict a 0)
+                       (key-dict-builder dict b)))))
 
-(begin-for-syntax (key-dict-builder key-dict keys2 (build-list 88 (λ (x) 0))))
 
-;only exists to print the dict
-(define-syntax (huh stx)
-  (print key-dict)
-  #'(void))
 
-huh
+(define key-dict (key-dict-builder (make-hash) keys))
+
+(provide key-dict)
