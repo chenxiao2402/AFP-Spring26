@@ -3,26 +3,36 @@
 (define keys
   (map string->symbol
        (flatten
-        (append
-         (for/list ([ltr '(A B C D E F G)])
+         (append
+           '("A0" "A#0" "B0")
            (for/list ([num (map add1 (range 7))])
-             (if (memv ltr '(A C D F G))
-                 (list
-                  (string-append (symbol->string ltr) (number->string num))
-                  (string-append (symbol->string ltr) "#" (number->string num))
-                  )
-                 (string-append (symbol->string ltr) (number->string num)))))
-         '("A0" "A#0" "B0" "C8")
-         ))))
+             (for/list ([ltr '(C D E F G A B)])
+               (if (memv ltr '(C D F G A))
+                   (list
+                     (string-append (symbol->string ltr) (number->string num))
+                     (string-append (symbol->string ltr) "#" (number->string num))
+                     )
+                   (string-append (symbol->string ltr) (number->string num)))))
+           '("C8")
+           ))))
 
-(define (key-dict-builder dict key)
+(define (make-counter)
+  (let ([n -1])
+    (lambda ()
+      (set! n (add1 n))
+      n)))
+
+(define (key-dict-builder dict key init-fun)
   (match key
     ('() dict)
-    ((cons a b) (begin (dict-set! dict a 0)
-                       (key-dict-builder dict b)))))
+    ((cons a b) (begin (dict-set! dict a (init-fun))
+                  (key-dict-builder dict b init-fun)))))
 
 
 
-(define key-dict (key-dict-builder (make-hash) keys))
+(define registers (key-dict-builder (make-hash) keys (lambda () 0)))
 
-(provide key-dict)
+(define key-values (key-dict-builder (make-hash) keys (make-counter)))
+
+
+(provide registers key-values)

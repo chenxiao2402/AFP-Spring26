@@ -51,7 +51,7 @@
     (if (eqv? x quarter-rest)
         (display output-buffer)
         #f)))
-        
+
 (define add-list
   (lambda (x)
     (define output 0)
