@@ -15,7 +15,10 @@
       ((A5 A6 A7) . CMD_RESET)
 
       ((A1 A2 A8) . CMD_PRINT_INT)
-      ((A1 A2 A9) . CMD_PRINT_CHAR))))
+      ((A1 A2 A9) . CMD_PRINT_CHAR)
+      
+      ((F1 F2 F3) . CMD_START_FUNC_DEF)
+      ((F2 F3 F4) . CMD_END_FUNC_DEF))))
 
 (define (decode-id chord #:key-signature [key-sig #f])
   (for/list ([k chord]) (reg-ref k)))

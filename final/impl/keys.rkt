@@ -1,5 +1,5 @@
 #lang racket
-(provide reg-ref reg-set!)
+(provide reg-ref reg-set! reg-swap-to-temp reg-restore)
 
 
 (define keys
@@ -20,16 +20,31 @@
 
 (define registers (make-hash))
 
+(define temp-registers (make-hash))
+
 (define (reg-ref x)
   (hash-ref registers x
             (lambda ()
               (if (memv x keys)
                   (begin
                     (hash-set! registers x 0) 0)
-                  (error "keys: key out of keyboard range")))))
+                  (error "keys: key ~s out of keyboard range" x)))))
 
 (define (reg-set! x val)
-  (if (memv x keys)
-                  (begin
-                    (hash-set! registers x val) val)
-                  (error "keys: key out of keyboard range")))
+  (if (reg-ref x)
+      (begin (hash-set! registers x val) val)
+      (error "keys: failed to reg-set! ~s" x)))
+
+(define reg-swap-to-temp
+  (lambda ()
+    (set! temp-registers registers)
+    (set! registers (make-hash))
+    ;(println temp-registers)
+    ))
+
+(define reg-restore
+  (lambda ()
+    (set! registers temp-registers)
+    (set! temp-registers (make-hash))
+    ;(println registers)
+    ))
