@@ -3,7 +3,6 @@
 (provide chord2cmd decode-id decode-value)
 
 
-
 (define chord2cmd
   (make-hash
     '(((A1 A2 A3) . CMD_ADD)
