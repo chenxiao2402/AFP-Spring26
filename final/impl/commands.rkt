@@ -1,6 +1,6 @@
 #lang racket
-
 (require "keys.rkt")
+(provide chord2cmd decode-id decode-value)
 
 
 
@@ -12,16 +12,14 @@
       ((A1 A2 A6) . CMD_DIV)
       ((A1 A2 A7) . CMD_ASSIGN)
 
+      ((A3 A4 A5) . CMD_ESTABLISH)
+      ((A5 A6 A7) . CMD_RESET)
+
       ((A1 A2 A8) . CMD_PRINT_INT)
       ((A1 A2 A9) . CMD_PRINT_CHAR))))
 
-
 (define (decode-id chord #:key-signature [key-sig #f])
-  (for/list ([k chord]) (hash-ref key-values k)))
-
+  (for/list ([k chord]) (reg-ref k)))
 
 (define (decode-value chord #:key-signature [key-sig #f])
-  (for/sum ([k chord]) (hash-ref key-values k)))
-
-
-(provide chord2cmd decode-id decode-value)
+  (for/sum ([k chord]) (reg-ref k)))
