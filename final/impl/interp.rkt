@@ -7,7 +7,7 @@
 (define state 'NONE)
 (define result 0)
 (define functions (make-hash))
-(define whiles (make-hash))
+(define whiles '())
 
 (define (interp-arith args)
   (let ([op (match state
@@ -43,33 +43,34 @@
 
 
 
+(define (extract-branch insts branch-count branch-name next-branch-name branch)
+  (match insts
+    ['() (values branch '())]
+    [(cons inst rest)
+     ;;;  (printf "Inst: ~a, Cmd: ~a, branch-name: ~a, next-branch-name: ~a\n"
+     ;;;          inst (hash-ref chord2cmd inst #f) branch-name next-branch-name)
+     (cond
+       [(equal? (hash-ref chord2cmd inst #f) branch-name)
+        (extract-branch rest (add1 branch-count) branch-name next-branch-name
+                        (append branch (list inst)))]
+       [(equal? (hash-ref chord2cmd inst #f) next-branch-name)
+        (if (= branch-count 0)
+            (values branch rest)
+            (extract-branch rest (sub1 branch-count) branch-name next-branch-name
+                            (append branch (list inst))))]
+       [else
+        (extract-branch rest branch-count branch-name next-branch-name
+                        (append branch (list inst)))])]
+    ))
 
-(define (interp-zero? args)
+(define (interp-if-zero args)
   (match state
     ['CMD_IF_ZERO
      (define iszero (for/and ([a args]) (zero? (reg-ref a))))
      (set! state (if iszero 'CMD_THEN 'CMD_ELSE))]))
 
 (define (extract-then-else-tail insts)
-  (define (extract-branch insts branch-count branch-name next-branch-name branch)
-    (match insts
-      ['() (values branch '())]
-      [(cons inst rest)
-       ;;;  (printf "Inst: ~a, Cmd: ~a, branch-name: ~a, next-branch-name: ~a\n"
-       ;;;          inst (hash-ref chord2cmd inst #f) branch-name next-branch-name)
-       (cond
-         [(equal? (hash-ref chord2cmd inst #f) branch-name)
-          (extract-branch rest (add1 branch-count) branch-name next-branch-name
-                          (append branch (list inst)))]
-         [(equal? (hash-ref chord2cmd inst #f) next-branch-name)
-          (if (= branch-count 0)
-              (values branch rest)
-              (extract-branch rest (sub1 branch-count) branch-name next-branch-name
-                              (append branch (list inst))))]
-         [else
-          (extract-branch rest branch-count branch-name next-branch-name
-                          (append branch (list inst)))])]
-      ))
+
   (define-values (thn rest) (extract-branch (cdr insts) 0 'CMD_THEN 'CMD_ELSE '()))
   (define-values (els tail) (extract-branch rest 0 'CMD_ELSE 'CMD_END_IF_ZERO '()))
   ;;; (printf "Extracted THEN branch: ~a\n" thn)
@@ -78,7 +79,38 @@
   (values thn els tail)
   )
 
+(define (interp-while args insts)
 
+  (define iszero (for/and ([a args]) (zero? (reg-ref a))))
+  (define (add-new-while)
+    (set! whiles (cons (cons args (cdr insts)) whiles))
+    (cdr insts))
+  (define (skip-new-while)
+    (define-values (_ rest) (extract-branch insts 0
+                                            'CMD_WHILE
+                                            'CMD_END_WHILE '()))
+    rest)
+  (define (loop-cur-while)
+    (cdr (car whiles)))
+  (define (exit-cur-while)
+    (set! whiles (cdr whiles))
+    insts)
+
+  ;;; (printf "While condition args: ~a, iszero: ~a\n" args iszero)
+  ;;; (printf "Current state: ~a\n" state)
+  ;;; (printf "Insts : ~a\n" insts)
+  (cond
+    [(and (not iszero) (equal? state 'CMD_WHILE))
+
+     (add-new-while)]
+    [(and iszero (equal? state 'CMD_WHILE))
+     (skip-new-while)]
+    [(and (not iszero) (equal? state 'CMD_END_WHILE))
+     (loop-cur-while)]
+    [(and iszero (equal? state 'CMD_END_WHILE))
+     (exit-cur-while)]
+
+    ))
 
 
 
@@ -108,13 +140,15 @@
     (reg-restore)))
 
 (define (interp insts)
+
   (match insts
     ['() (void)]
     [(cons inst rest)
      (match state
        ['NONE
         (set! state (hash-ref chord2cmd inst))
-        (interp rest)]
+        (interp (if (equal? state 'CMD_END_WHILE)
+                    insts rest))]
        ['RESULT
         (interp-result inst)
         (set! state 'NONE)
@@ -137,7 +171,7 @@
         (interp rest)]
 
        ['CMD_IF_ZERO
-        (interp-zero? inst)
+        (interp-if-zero inst)
         (let-values ([(thn els tail) (extract-then-else-tail rest)])
           (match state
             ['CMD_THEN
@@ -147,6 +181,21 @@
              (set! state 'NONE)
              (interp (append els tail))]
             [_ (error "Interp error: Invalid state after CMD_IF_ZERO")]))]
+
+       ['CMD_WHILE
+        (define new-insts (interp-while inst rest))
+        (set! state 'NONE)
+        ;;; (printf "while New-insts: ~a\n" new-insts)
+        ;;; (printf "Current whiles stack: ~a\n" whiles)
+        (interp new-insts)]
+       ['CMD_END_WHILE
+        (define while-cnd-args (car (car whiles)))
+        (define new-insts (interp-while while-cnd-args rest))
+        (set! state 'NONE)
+        ;;; (printf "Endwhile New-insts: ~a\n" new-insts)
+        ;;; (printf "Current whiles stack: ~a\n" whiles)
+        (interp new-insts)]
+
 
        ; function definitions
        ['CMD_START_FUNC_DEF ; set an entry in the functions hash-map with the instruction as a name

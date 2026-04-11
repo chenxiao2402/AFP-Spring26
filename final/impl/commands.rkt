@@ -21,8 +21,9 @@
       ((F2 F3 F4) . CMD_END_FUNC_DEF)
 
 
-      ((B1 B2 B3) . CMD_START_WHILE)
-      ((B2 B3 B4) . CMD_END_WHILE)
+      ((B1 B2 B3) . CMD_WHILE)
+      ((B2 B3 B4) . CMD_WHILE_BODY)
+      ((B3 B4 B5) . CMD_END_WHILE)
 
       ((C1 C2 C3) . CMD_IF_ZERO)
       ((C2 C3 C4) . CMD_THEN)
@@ -30,6 +31,11 @@
       ((C4 C5 C6) . CMD_END_IF_ZERO)
 
       )))
+
+(define (encode-cmd cmd)
+  (for/first ([(k v) (in-hash chord2cmd)]
+              #:when (equal? v cmd))
+    k))
 
 (define (decode-id chord #:key-signature [key-sig #f])
   (for/list ([k chord]) (reg-ref k)))
