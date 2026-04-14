@@ -1,67 +1,31 @@
 #lang racket
 (require "keys.rkt"
-         "commands.rkt")
+         "commands.rkt"
+         "tools.rkt")
 (provide interp)
-
 
 (define state 'NONE)
 (define result 0)
-(define functions (make-hash))
 (define whiles '())
-
-(define (interp-arith args)
-  (let ([op (match state
-              ['CMD_ADD +]
-              ['CMD_SUB -]
-              ['CMD_MUL *]
-              ['CMD_DIV /]
-              [else (error "Interp error: Invalid command passed to (interp-arith)")])])
-    (set! result (apply op (for/list ([e args]) (reg-ref e))))))
-
-(define (interp-result args)
-  (begin
-    (for/list ([e args]) (reg-set! e result))
-    (set! result 0)))
-
-(define (interp-assign args)
-  (set! result (reg-ref (car args))))
-
-(define (interp-print args)
-  (match state
-    ['CMD_PRINT_INT
-     (for/list ([reg args]) (print (reg-ref reg)) (printf ""))
-     (printf "\n")]
-    ['CMD_PRINT_CHAR
-     (println (list->string (for/list ([reg args]) (integer->char (reg-ref reg)))))]))
-
-(define (interp-set args)
-  (match state
-    ['CMD_ESTABLISH
-     (for/list ([a args]) (reg-set! a 1))]
-    ['CMD_RESET
-     (for/list ([a args]) (reg-set! a 0))]))
-
-
 
 (define (extract-branch insts branch-count branch-name next-branch-name branch)
   (match insts
     ['() (values branch '())]
     [(cons inst rest)
-     ;;;  (printf "Inst: ~a, Cmd: ~a, branch-name: ~a, next-branch-name: ~a\n"
-     ;;;          inst (hash-ref chord2cmd inst #f) branch-name next-branch-name)
+       (printf "Inst: ~a, Cmd: ~a, branch-name: ~a, next-branch-name: ~a\n"
+               inst (hash-ref chord-to-command inst #f) branch-name next-branch-name)
      (cond
-       [(equal? (hash-ref chord2cmd inst #f) branch-name)
+       [(equal? (hash-ref chord-to-command inst #f) branch-name)
         (extract-branch rest (add1 branch-count) branch-name next-branch-name
                         (append branch (list inst)))]
-       [(equal? (hash-ref chord2cmd inst #f) next-branch-name)
+       [(equal? (hash-ref chord-to-command inst #f) next-branch-name)
         (if (= branch-count 0)
             (values branch rest)
             (extract-branch rest (sub1 branch-count) branch-name next-branch-name
                             (append branch (list inst))))]
        [else
         (extract-branch rest branch-count branch-name next-branch-name
-                        (append branch (list inst)))])]
-    ))
+                        (append branch (list inst)))])]))
 
 (define (interp-if-zero args)
   (match state
@@ -114,61 +78,267 @@
 
 
 
-(struct Function (args instructions return) #:transparent)
 
 
-(define handle-function-calls
-  (lambda (func-name args)
-    (define func (hash-ref functions func-name))
-    (define instructions (Function-instructions func))
 
-    ; offload current reg valus
-    (define reg-list (for/list ([e args]) (reg-ref e)))
-    (reg-swap-to-temp)
 
-    ; set args to appropriate registers
-    ; (println func)
-    (for/list ([a1 (Function-args func)] [a2 reg-list])
-      (reg-set! a1 a2))
 
-    (set! state 'NONE)
-    (interp instructions)
 
-    (define ret (Function-return func))
-    (set! result (reg-ref (car ret)))
+;;;
+; BASE INTERPRETER
+;;;
 
-    (reg-restore)))
+(define called-function empty)
+
+(define (set-state inst)
+  (let ([temp (chord-to-command inst)])
+    (when (eqv? temp 'FUNCTION_CALL)
+        (set! called-function inst))
+    (set! state temp)))
 
 (define (interp insts)
-
   (match insts
     ['() (void)]
     [(cons inst rest)
      (match state
        ['NONE
-        (set! state (hash-ref chord2cmd inst))
+        (set-state inst)
+        (interp rest)]
+       [(or 'RESULT 'CMD_ESTABLISH 'CMD_RESET 'CMD_ASSIGN)
+        (interp-set insts)]
+       [(or 'CMD_ADD 'CMD_SUB 'CMD_MUL 'CMD_DIV)
+        (interp-arith insts)]
+       [(or 'CMD_START_FUNC_DEF 'FUNCTION_CALL)
+        (interp-func insts)]
+       [(or 'CMD_PRINT_INT 'CMD_PRINT_CHAR)
+        (interp-print insts)]
+
+       
+       [else
+        (error (symbol->string state))])]))
+
+
+;;;
+; PRINTING
+;;;
+
+(define (interp-print insts)
+  (match insts
+    ['() (void)]
+    [(cons inst rest)
+     (match state
+       ['CMD_PRINT_INT
+        (for/list ([reg inst]) (print (reg-ref reg)) (printf ""))
+        (printf "\n")
+        (set! state 'NONE)
+        (interp rest)]
+       ['CMD_PRINT_CHAR
+        (println (list->string (for/list ([reg inst]) (integer->char (reg-ref reg)))))
+        (set! state 'NONE)
+        (interp rest)])]))
+
+
+;;;
+; VARIABLES
+;;;
+
+(define (var-set-regs inst val)
+  (for/list ([reg inst]) (reg-set! reg val)))
+
+(define (interp-set insts)
+  (match insts
+    ['() (void)]
+    [(cons inst rest)
+     (match state
+       ; set var(s) to the value in `result`
+       ['RESULT
+        (var-set-regs inst result)
+        (set! state 'NONE)
+        (interp rest)]
+       ; set var(s) to 1
+       ['CMD_ESTABLISH
+        (var-set-regs inst 1)
+        (set! state 'NONE)
+        (interp rest)]
+       ; set var(s) to 0
+       ['CMD_RESET
+        (var-set-regs inst 0)
+        (set! state 'NONE)
+        (interp rest)]
+       ; set result to var
+       ['CMD_ASSIGN
+        (set! result (reg-ref (car inst)))
+        (set! state 'RESULT)
+        (interp rest)])]))
+
+
+;;;
+; ARITHMETIC
+;;;
+
+(define (arith-set-result inst op)
+  (set! result (apply op (for/list ([reg inst]) (reg-ref reg)))))
+
+(define (interp-arith insts)
+  (match insts
+    ['() (void)]
+    [(cons inst rest)
+     (match state
+       ['CMD_ADD
+        (arith-set-result inst +)
+        (set! state 'RESULT)
+        (interp rest)]
+       ['CMD_SUB
+        (arith-set-result inst -)
+        (set! state 'RESULT)
+        (interp rest)]
+       ['CMD_MUL
+        (arith-set-result inst *)
+        (set! state 'RESULT)
+        (interp rest)]
+       ['CMD_DIV
+        (arith-set-result inst /)
+        (set! state 'RESULT)
+        (interp rest)])]))
+
+
+;;;
+; FUNCTIONS
+;;;
+
+(struct Func (args insts ret) #:transparent)
+
+(define curr-func-name empty)
+(define curr-func-args empty)
+(define curr-func-insts empty)
+(define curr-func-ret empty)
+
+(define (create-function)
+  (add-func curr-func-name (Func curr-func-args (reverse curr-func-insts) curr-func-ret))
+  (set! curr-func-name empty)
+  (set! curr-func-args empty)
+  (set! curr-func-insts empty)
+  (set! curr-func-ret empty))
+
+(define handle-function-calls
+  (lambda (inst)
+    (define function (get-func called-function))
+    (define function-instructions (Func-insts function))
+    ; push current reg values and save relevant values for args
+    (define saved-regs (for/list ([reg inst]) (reg-ref reg)))
+    (reg-push)
+    (push-func (cons called-function function))
+    (for/list ([arg (Func-args function)] [reg saved-regs])
+      (reg-set! arg reg))
+    ; interp function body
+    (set! state 'NONE)
+    (interp function-instructions)
+    ; get return value
+    (define return-reg (Func-ret function))
+    (set! result (reg-ref (car return-reg)))
+    ; restore state
+    (pop-func)
+    (reg-pop)))
+
+(define (interp-func insts)
+  (match insts
+    ['() (void)]
+    [(cons inst rest)
+     (match state
+       ['CMD_START_FUNC_DEF
+        (set! curr-func-name inst)
+        (set! state 'DEF_FUNC_ARGS)
+        (interp-func rest)]
+       ['DEF_FUNC_ARGS
+        (set! curr-func-args inst)
+        (set! state 'DEF_FUNC_BODY)
+        (interp-func rest)]
+       ['DEF_FUNC_BODY
+        (if (eqv? (chord-to-command inst) 'CMD_END_FUNC_DEF)
+            (set! state 'DEF_FUNC_RETURN)
+            (set! curr-func-insts (cons inst curr-func-insts)))
+        (interp-func rest)]
+       ['DEF_FUNC_RETURN
+        (set! curr-func-ret inst)
+        (create-function)
+        (set! state 'NONE)
+        (interp rest)]
+       ['FUNCTION_CALL
+        (handle-function-calls inst)
+        (set! state 'RESULT)
+        (interp rest)])]))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+(define (interp-cond insts)
+  (match insts
+    ['() (void)]
+    [(cons inst rest)
+     (match state
+       ['CMD_IF
+        (set! state 'DEF_COND_TYPE)
+        (interp rest)]
+       ['DEF_COND_TYPE
+        (set! state (hash-ref chord-to-command inst))
+        (interp rest)]
+       [else
+        (interp-OLD insts)])]))
+
+
+(define (interp-OLD insts)
+  (error "oopsie")
+  (match insts
+    ['() (void)]
+    [(cons inst rest)
+     (match state
+       #;
+       ['NONE
+        (set! state (hash-ref chord-to-command inst))
         (interp (if (equal? state 'CMD_END_WHILE)
                     insts rest))]
-       ['RESULT
-        (interp-result inst)
-        (set! state 'NONE)
-        (interp rest)]
-       [(or 'CMD_ESTABLISH 'CMD_RESET)
-        (interp-set inst)
-        (set! state 'NONE)
-        (interp rest)]
-       [(or 'CMD_ADD 'CMD_SUB 'CMD_MUL 'CMD_DIV)
-        (interp-arith inst)
-        (set! state 'RESULT)
-        (interp rest)]
-       [(or 'CMD_ASSIGN)
-        (interp-assign inst)
-        (set! state 'RESULT)
-        (interp rest)]
-       [(or 'CMD_PRINT_INT 'CMD_PRINT_CHAR)
-        (interp-print inst)
-        (set! state 'NONE)
-        (interp rest)]
+       ; arithmetic
+
+       ; output
 
        ['CMD_IF_ZERO
         (interp-if-zero inst)
@@ -196,43 +366,7 @@
         ;;; (printf "Current whiles stack: ~a\n" whiles)
         (interp new-insts)]
 
-
-       ; function definitions
-       ['CMD_START_FUNC_DEF ; set an entry in the functions hash-map with the instruction as a name
-        (hash-set! functions inst empty)
-        (set! state (cons 'DEF_FUNC_ARGS inst))
-        ;(println functions)
-        (interp rest)]
-       [(cons 'DEF_FUNC_ARGS func-name)
-        (hash-set! functions func-name (Function inst empty empty))
-        (set! state (cons 'DEF_FUNC_BODY func-name))
-        ;(println functions)
-        (interp rest)]
-       [(cons 'DEF_FUNC_BODY func-name)
-        (if (eqv? (hash-ref chord2cmd inst #f) 'CMD_END_FUNC_DEF)
-            (set! state (cons 'DEF_FUNC_RETURN func-name))
-            (let ([ref (hash-ref functions func-name)])
-              (let ([new-instructions (append (Function-instructions ref) (list inst))])
-                (hash-set! functions func-name (Function (Function-args ref) new-instructions empty)))))
-        ;(println functions)
-        (interp rest)
-        ]
-       [(cons 'DEF_FUNC_RETURN func-name)
-        (define ref (hash-ref functions func-name))
-        (hash-set! functions func-name (Function (Function-args ref) (Function-instructions ref) inst))
-        (hash-set! chord2cmd func-name (cons 'CUSTOM_FUNCTION func-name))
-        (set! state 'NONE)
-        ;(println functions)
-        ;(println chord2cmd)
-        (interp rest)
-        ]
-       ; function calling
-       [(cons 'CUSTOM_FUNCTION func-name)
-        ;(print func-name)
-        ;(println " called !!")
-        (handle-function-calls func-name inst)
-        (set! state 'RESULT)
-        (interp rest)]
+       
 
        )]))
 

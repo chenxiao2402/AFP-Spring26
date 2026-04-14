@@ -1,5 +1,5 @@
 #lang racket
-(provide reg-ref reg-set! reg-swap-to-temp reg-restore)
+(provide reg-ref reg-set! reg-push reg-pop)
 
 
 (define keys
@@ -19,8 +19,7 @@
            ))))
 
 (define registers (make-hash))
-
-(define temp-registers (make-hash))
+(define saved-registers '())
 
 (define (reg-ref x)
   (hash-ref registers x
@@ -35,16 +34,16 @@
       (begin (hash-set! registers x val) val)
       (error "keys: failed to reg-set! ~s" x)))
 
-(define reg-swap-to-temp
+(define reg-push
   (lambda ()
-    (set! temp-registers registers)
+    (set! saved-registers (cons registers saved-registers))
     (set! registers (make-hash))
     ;(println temp-registers)
     ))
 
-(define reg-restore
+(define reg-pop
   (lambda ()
-    (set! registers temp-registers)
-    (set! temp-registers (make-hash))
+    (set! registers (car saved-registers))
+    (set! saved-registers (cdr saved-registers))
     ;(println registers)
     ))

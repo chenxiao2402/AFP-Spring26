@@ -22,7 +22,26 @@
 
   ; Print C7 as int
   (chord A1 A2 A8)
-  (chord C7))
+  (chord C7)
+
+  ; Print B3 to make sure stack saved
+  (chord A1 A2 A8)
+  (chord B3)
+
+  
+  ; call function C6 C7 with args B3 E4
+  (chord C6 C7)
+  (chord B3 E4)
+  (chord C7)
+
+
+  ; Print C7 as int
+  (chord A1 A2 A8)
+  (chord C7)
+
+  ; Print B3 to make sure stack saved
+  (chord A1 A2 A8)
+  (chord B3))
 
 ; expected errors that work
 #; ; non-staff chord expression
