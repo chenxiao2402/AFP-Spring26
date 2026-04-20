@@ -14,7 +14,7 @@
       ((A1 A2 A5) . CMD_MUL)
       ((A1 A2 A6) . CMD_DIV)
 
-      ((A3 A4 A5) . CMD_ESTABLISH)
+      ((E3 E4 E5) . CMD_ESTABLISH)
       ((A5 A6 A7) . CMD_RESET)
       ((A1 A2 A7) . CMD_ASSIGN)
 
@@ -47,6 +47,7 @@
   (set! function-stack (cdr function-stack)))
 
 (define (add-func inst func)
+  (println func)
   (hash-set! (car function-stack) inst func))
 
 (define (get-func inst)
@@ -57,6 +58,14 @@
    basic-instruction-set
    inst
    (lambda () (check-for-custom inst))))
+
+(define (chord-to-cond inst)
+  (hash-ref
+   '(((C1 C2) . 'COND_LESS_THAN)
+     ((C2 C3) . 'COND_GREATER_THAN)
+     ((C4 C5) . 'COND_EQUAL))
+   inst))
+     
 
 (define (check-for-custom inst)
   (if (hash-ref (car function-stack) inst #f)

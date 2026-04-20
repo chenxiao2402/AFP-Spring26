@@ -40,8 +40,7 @@
   ;;; (printf "Extracted THEN branch: ~a\n" thn)
   ;;; (printf "Extracted ELSE branch: ~a\n" els)
   ;;; (printf "Remaining tail: ~a\n" tail)
-  (values thn els tail)
-  )
+  (values thn els tail))
 
 (define (interp-while args insts)
 
@@ -115,7 +114,7 @@
 
        
        [else
-        (error (symbol->string state))])]))
+        (error state)])]))
 
 
 ;;;
@@ -213,6 +212,8 @@
 (define curr-func-insts empty)
 (define curr-func-ret empty)
 
+(define func-index 0)
+
 (define (create-function)
   (add-func curr-func-name (Func curr-func-args (reverse curr-func-insts) curr-func-ret))
   (set! curr-func-name empty)
@@ -232,6 +233,7 @@
       (reg-set! arg reg))
     ; interp function body
     (set! state 'NONE)
+    (println function-instructions)
     (interp function-instructions)
     ; get return value
     (define return-reg (Func-ret function))
@@ -248,18 +250,29 @@
        ['CMD_START_FUNC_DEF
         (set! curr-func-name inst)
         (set! state 'DEF_FUNC_ARGS)
+        ; (set! func-index (add1 func-index))
         (interp-func rest)]
        ['DEF_FUNC_ARGS
         (set! curr-func-args inst)
         (set! state 'DEF_FUNC_BODY)
         (interp-func rest)]
        ['DEF_FUNC_BODY
+        ; KNOWN BUG ! - if 'CMD_END_FUNC_DEF is present as an inst
+        ; EVEN IF NOT RELEVANT TO THE FUNCTION (such as for an inner
+        ; defined function. it quits and the function definition
+        ; doesn't properly terminate.
         (if (eqv? (chord-to-command inst) 'CMD_END_FUNC_DEF)
-            (set! state 'DEF_FUNC_RETURN)
+            (if (zero? func-index)
+                (set! state 'DEF_FUNC_RETURN)
+                (begin
+                  (set! curr-func-insts (cons inst curr-func-insts))
+                  (set! func-index (sub1 func-index))))
             (set! curr-func-insts (cons inst curr-func-insts)))
+        (when (eqv? (chord-to-command inst) 'CMD_START_FUNC_DEF) (set! func-index (add1 func-index)))
         (interp-func rest)]
        ['DEF_FUNC_RETURN
         (set! curr-func-ret inst)
+        ; (set! func-index (sub1 func-index))
         (create-function)
         (set! state 'NONE)
         (interp rest)]
@@ -269,46 +282,9 @@
         (interp rest)])]))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
+;;;
+; BASE INTERPRETER
+;;;
 
 (define (interp-cond insts)
   (match insts
@@ -317,12 +293,10 @@
      (match state
        ['CMD_IF
         (set! state 'DEF_COND_TYPE)
-        (interp rest)]
+        (interp-cond rest)]
        ['DEF_COND_TYPE
-        (set! state (hash-ref chord-to-command inst))
-        (interp rest)]
-       [else
-        (interp-OLD insts)])]))
+        (interp-cond rest)])]))
+
 
 
 (define (interp-OLD insts)
@@ -365,9 +339,6 @@
         ;;; (printf "Endwhile New-insts: ~a\n" new-insts)
         ;;; (printf "Current whiles stack: ~a\n" whiles)
         (interp new-insts)]
-
-       
-
        )]))
 
     
