@@ -111,6 +111,8 @@
         (interp-func insts)]
        [(or 'CMD_PRINT_INT 'CMD_PRINT_CHAR)
         (interp-print insts)]
+       [(or 'CMD_IF)
+        (interp-cond insts)]
 
        
        [else
@@ -257,10 +259,6 @@
         (set! state 'DEF_FUNC_BODY)
         (interp-func rest)]
        ['DEF_FUNC_BODY
-        ; KNOWN BUG ! - if 'CMD_END_FUNC_DEF is present as an inst
-        ; EVEN IF NOT RELEVANT TO THE FUNCTION (such as for an inner
-        ; defined function. it quits and the function definition
-        ; doesn't properly terminate.
         (if (eqv? (chord-to-command inst) 'CMD_END_FUNC_DEF)
             (if (zero? func-index)
                 (set! state 'DEF_FUNC_RETURN)
@@ -272,7 +270,6 @@
         (interp-func rest)]
        ['DEF_FUNC_RETURN
         (set! curr-func-ret inst)
-        ; (set! func-index (sub1 func-index))
         (create-function)
         (set! state 'NONE)
         (interp rest)]
@@ -283,8 +280,68 @@
 
 
 ;;;
-; BASE INTERPRETER
+; CONDITIONALS
 ;;;
+
+(define extract-then
+  (lambda (insts index)
+    (match insts
+      ['() empty]
+      [(cons inst rest)
+       (match (chord-to-command inst)
+         ['CMD_THEN
+          (if (zero? index)
+              (extract-then rest index)
+              (cons inst (extract-then rest index)))]
+         ['CMD_IF
+          (cons inst (extract-then rest (add1 index)))]
+         ['CMD_ELSE
+          (if (zero? index)
+              '()
+              (cons inst (extract-then rest index)))]
+         ['CMD_END_IF
+          (if (zero? index)
+              '()
+              (cons inst (extract-then rest (sub1 index))))]
+         [else
+          (cons inst (extract-then rest index))])])))
+
+(define extract-else
+  (lambda (insts index)
+    (match insts
+      ['() empty]
+      [(cons inst rest)
+       (match (chord-to-command inst)
+         ['CMD_IF
+          (extract-else rest (add1 index))]
+         ['CMD_ELSE
+          (if (zero? index)
+              (extract-then rest 0)
+              (extract-else rest index))]
+         ['CMD_END_IF
+          (if (zero? index)
+              '()
+              (cons inst (extract-else rest (sub1 index))))]
+         [else
+          (extract-else rest index)])])))
+
+(define extract-tail
+  (lambda (insts index)
+    (match insts
+      ['() empty]
+      [(cons inst rest)
+       (match (chord-to-command inst)
+         ['CMD_IF
+          (extract-tail rest (add1 index))]
+         ['CMD_END_IF
+          (if (zero? index)
+              rest
+              (extract-tail rest (sub1 index)))]
+         [else
+          (extract-tail rest index)])])))
+
+(define (cond-set-result inst op)
+  (set! result (if (apply op (for/list ([reg inst]) (reg-ref reg))) 0 1)))
 
 (define (interp-cond insts)
   (match insts
@@ -293,9 +350,39 @@
      (match state
        ['CMD_IF
         (set! state 'DEF_COND_TYPE)
-        (interp-cond rest)]
+        (interp-cond insts)]
        ['DEF_COND_TYPE
-        (interp-cond rest)])]))
+        (set! state (chord-to-cond inst))
+        (interp-cond rest)]
+       
+       ['COND_EQUAL
+        (cond-set-result inst =)
+        (set! state 'COND_RESULT)
+        (interp-cond rest)]
+       ['COND_LESS_THAN
+        (cond-set-result inst <)
+        (set! state 'COND_RESULT)
+        (interp-cond rest)]
+       ['COND_GREATER_THAN
+        (cond-set-result inst >)
+        (set! state 'COND_RESULT)
+        (interp-cond rest)]
+       ['COND_LESS_THAN_EQUAL
+        (cond-set-result inst <=)
+        (set! state 'COND_RESULT)
+        (interp-cond rest)]
+       ['COND_GREATER_THAN_EQUAL
+        (cond-set-result inst >=)
+        (set! state 'COND_RESULT)
+        (interp-cond rest)]
+        
+  
+       ['COND_RESULT
+        (set! state 'NONE)
+        (if (zero? result)
+            (interp (extract-then insts 0))
+            (interp (extract-else insts 0)))
+        (interp (extract-tail insts 0))])]))
 
 
 

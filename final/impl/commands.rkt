@@ -2,6 +2,7 @@
 (require "tools.rkt")
 (provide
  chord-to-command
+ chord-to-cond
  add-func
  get-func
  push-func
@@ -29,12 +30,13 @@
       ((B2 B3 B4) . CMD_WHILE_BODY)
       ((B3 B4 B5) . CMD_END_WHILE)
 
-      ((C1 C2 E3) . CMD_IF)
+      ((C1 C2 C3) . CMD_IF)
+      ((C4 C5 C6) . CMD_END_IF)
 
-      ((C1 C2 C3) . CMD_IF_ZERO)
+      ((C1 C2 E3) . CMD_IF_ZERO)
       ((C2 C3 C4) . CMD_THEN)
       ((C3 C4 C5) . CMD_ELSE)
-      ((C4 C5 C6) . CMD_END_IF_ZERO))))
+      ((C4 C5 E6) . CMD_END_IF_ZERO))))
 
 (define function-stack (cons (make-hash) empty))
 
@@ -61,9 +63,12 @@
 
 (define (chord-to-cond inst)
   (hash-ref
-   '(((C1 C2) . 'COND_LESS_THAN)
-     ((C2 C3) . 'COND_GREATER_THAN)
-     ((C4 C5) . 'COND_EQUAL))
+   (make-hash
+    '(((C1 C2) . COND_LESS_THAN)
+      ((C2 C3) . COND_GREATER_THAN)
+      ((C4 C5) . COND_EQUAL)
+      ((C6 C7) . COND_LESS_THAN_EQUAL)
+      ((C8 C1) . COND_GREATER_THAN_EQUAL)))
    inst))
      
 
