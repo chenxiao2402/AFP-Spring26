@@ -2,9 +2,9 @@
 (require "interp.rkt"
          (for-syntax syntax/parse))
 (provide staff
-         (rename-out [my-module-begin #%module-begin]))
+         (rename-out [ft-module-begin #%module-begin]))
 
-(define-syntax (my-module-begin stx)
+(define-syntax (ft-module-begin stx)
   (syntax-parse stx
     #:datum-literals (staff)
     [(_)
