@@ -7,35 +7,37 @@
  get-func
  push-func
  pop-func)
+;                       0  1  2  3  4  5  6  7  8  9  10 11 12 13 14
+(define key-signature '(C2 D2 E2 F2 G2 A3 B3 C3 D3 E3 F3 G3 A4 B4 C4))
 
 (define basic-instruction-set
   (make-hash
-    '(((A1 A2 A3) . CMD_ADD)
-      ((A1 A2 A4) . CMD_SUB)
-      ((A1 A2 A5) . CMD_MUL)
+    '(((0 1 2) . CMD_ADD)
+      ((3 11 12) . CMD_SUB)
+      ((0 2 3) . CMD_MUL)
       ((A1 A2 A6) . CMD_DIV)
 
-      ((E3 E4 E5) . CMD_ESTABLISH)
-      ((A5 A6 A7) . CMD_RESET)
+      ((1 2 3) . CMD_ESTABLISH)
+      ((1 4 7) . CMD_RESET)
       ((A1 A2 A7) . CMD_ASSIGN)
 
-      ((A1 A2 A8) . CMD_PRINT_INT)
+      ((2 3 4) . CMD_PRINT_INT)
       ((A1 A2 A9) . CMD_PRINT_CHAR)
 
-      ((F1 F2 F3) . CMD_START_FUNC_DEF)
-      ((F2 F3 F4) . CMD_END_FUNC_DEF)
+      ((6 7 8) . CMD_START_FUNC_DEF)
+      ((6 8 9) . CMD_END_FUNC_DEF)
 
 
-      ((B1 B2 B3) . CMD_WHILE)
-      ((B2 B3 B4) . CMD_WHILE_BODY)
-      ((B3 B4 B5) . CMD_END_WHILE)
+      ((4 5 6) . CMD_WHILE)
+      ((7 8 9) . CMD_WHILE_BODY)
+      ((10 5 7) . CMD_END_WHILE)
 
-      ((C1 C2 C3) . CMD_IF)
-      ((C4 C5 C6) . CMD_END_IF)
+      ((1 3 5) . CMD_IF)
+      ((2 3 5) . CMD_THEN)
+      ((3 2 5) . CMD_ELSE)
+      ((4 6 7) . CMD_END_IF)
 
       ((C1 C2 E3) . CMD_IF_ZERO)
-      ((C2 C3 C4) . CMD_THEN)
-      ((C3 C4 C5) . CMD_ELSE)
       ((C4 C5 E6) . CMD_END_IF_ZERO))))
 
 (define function-stack (cons (make-hash) empty))
@@ -49,30 +51,34 @@
   (set! function-stack (cdr function-stack)))
 
 (define (add-func inst func)
-  (println func)
+  (when debug (println func))
   (hash-set! (car function-stack) inst func))
 
 (define (get-func inst)
   (hash-ref (car function-stack) inst))
 
 (define (chord-to-command inst)
+  (define inst-to-num (for/list ([e inst]) (index-of key-signature e)))
+  (when debug (println inst-to-num))
   (hash-ref
    basic-instruction-set
-   inst
+   inst-to-num
    (lambda () (check-for-custom inst))))
 
 (define (chord-to-cond inst)
+  (define inst-to-num (for/list ([e inst]) (index-of key-signature e)))
   (hash-ref
    (make-hash
-    '(((C1 C2) . COND_LESS_THAN)
-      ((C2 C3) . COND_GREATER_THAN)
-      ((C4 C5) . COND_EQUAL)
-      ((C6 C7) . COND_LESS_THAN_EQUAL)
-      ((C8 C1) . COND_GREATER_THAN_EQUAL)))
-   inst))
+    '(((1 3) . COND_LESS_THAN)
+      ((2 4) . COND_GREATER_THAN)
+      ((3 5) . COND_EQUAL)
+      ((4 6) . COND_LESS_THAN_EQUAL)
+      ((5 7) . COND_GREATER_THAN_EQUAL)))
+   inst-to-num))
      
 
 (define (check-for-custom inst)
+  (when debug (println inst))
   (if (hash-ref (car function-stack) inst #f)
       'FUNCTION_CALL
       #f))

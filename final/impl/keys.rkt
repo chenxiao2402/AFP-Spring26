@@ -27,12 +27,12 @@
               (if (memv x keys)
                   (begin
                     (hash-set! registers x 0) 0)
-                  (error "keys: key ~s out of keyboard range" x)))))
+                  (error "keys: invalid key" x)))))
 
 (define (reg-set! x val)
   (if (reg-ref x)
       (begin (hash-set! registers x val) val)
-      (error "keys: failed to reg-set! ~s" x)))
+      (error "keys: failed to reg-set!" x)))
 
 (define reg-push
   (lambda ()

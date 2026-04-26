@@ -4,4 +4,4 @@
 (provide
  debug)
 
-(define debug #t); toggle between #t or #f to output debug data
+(define debug #f); toggle between #t or #f to output debug data
