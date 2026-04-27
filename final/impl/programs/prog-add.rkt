@@ -1,6 +1,5 @@
 #lang s-exp "../lang.rkt"
 
-
 (staff
   (chord D2 E2 F2) ; CMD_ESTABLISH
   (chord D#1 D2 D3 D4)

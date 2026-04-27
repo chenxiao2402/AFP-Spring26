@@ -30,7 +30,7 @@
         (interp rest)]
        [(or 'RESULT 'CMD_ESTABLISH 'CMD_RESET 'CMD_ASSIGN)
         (interp-set insts)]
-       [(or 'CMD_ADD 'CMD_SUB 'CMD_MUL 'CMD_DIV)
+       [(or 'CMD_ADD 'CMD_SUB 'CMD_MUL 'CMD_DIV 'CMD_BITWISE_AND)
         (interp-arith insts)]
        [(or 'CMD_START_FUNC_DEF 'FUNCTION_CALL)
         (interp-func insts 0)]
@@ -40,8 +40,6 @@
         (interp-cond insts (Cond empty empty empty) 0)]
        [(or 'CMD_WHILE)
         (interp-while insts (While empty empty) 0)]
-
-       
        [else
         (error state)])]))
 
@@ -56,12 +54,12 @@
     [(cons inst rest)
      (match state
        ['CMD_PRINT_INT
-        (for/list ([reg inst]) (print (reg-ref reg)) (printf ""))
-        (printf "\n")
+        (for/list ([reg inst]) (display (reg-ref reg)) (display " "))
         (set! state 'NONE)
         (interp rest)]
        ['CMD_PRINT_CHAR
-        (println (list->string (for/list ([reg inst]) (integer->char (reg-ref reg)))))
+        (for/list ([reg inst])
+          (display (integer->char (reg-ref reg))))
         (set! state 'NONE)
         (interp rest)])]))
 
@@ -126,6 +124,10 @@
         (interp rest)]
        ['CMD_DIV
         (arith-set-result inst /)
+        (set! state 'RESULT)
+        (interp rest)]
+       ['CMD_BITWISE_AND
+        (arith-set-result inst bitwise-and)
         (set! state 'RESULT)
         (interp rest)])]))
 
@@ -362,6 +364,7 @@
        ['EXECUTE_WHILE
         (when debug (println while))
         (execute-while while)
+        (set! state 'NONE)
         (interp rest)])]))
 
     

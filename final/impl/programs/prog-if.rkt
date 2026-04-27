@@ -4,59 +4,54 @@
 
   ; ESTABLISH (B1, B2, B3, B4)
   ; i.e., to set all of them to 1
-  (chord A3 A4 A5)
+  (chord D2 E2 F2) ; CMD_ESTABLISH
   (chord B1 B2 B3 B4)
 
   ; RESET (C1, C2)
   ; i.e., to set both of them to 0
-  (chord A5 A6 A7)
+  (chord D2 F2 G2) ; CMD_RESET
   (chord C1 C2)
 
-  #; (if (and (zero? C1) (zero? C2))
-         (begin (set! C1 1) (set! B3 (+ B1 B2)) (print B3))
-         (begin (set! B4 0) (print B4)))
-  (chord C1 C2 C3) ; IF_ZERO
+  (chord G2 A3 B3) ; CMD_IF
+  (chord C2 F2) ; COND_EQUAL
   (chord C1 C2) ; whether both C1 and C2 are zero
 
-  (chord C2 C3 C4) ; THEN
-  (chord A3 A4 A5) ; ESTABLISH (C1)
+  (chord G2 B3 C3) ; CMD_THEN
+  (chord D2 E2 F2) ; CMD_ESTABLISH
   (chord C1)
-  (chord A1 A2 A3) ; B3 = ADD B1 B2
+  (chord C2 D2 E2) ; CMD_ADD
   (chord B1 B2)
   (chord B3)
-  (chord A1 A2 A8) ; PRINT_INT B3
+  (chord E2 F2 G2) ; CMD_PRINT_INT
   (chord B3)
 
-  (chord C3 C4 C5) ; ELSE
-  (chord A5 A6 A7) ; RESET (B4)
+  (chord G2 C3 D3) ; CMD_ELSE
+  (chord D2 F2 G2) ; CMD_RESET
   (chord B4)
-  (chord A1 A2 A8) ; PRINT_INT B3
+  (chord E2 F2 G2) ; CMD_PRINT_INT
   (chord B4)
 
+  (chord G2 D3 E3) ; CMD_END_IF
 
-  #; (if (and (zero? C1) (zero? C2))
-         (begin (set! C1 1) (set! B3 (+ B1 B2)) (print B3))
-         (begin (set! B4 0) (print B4)))
-  (chord C4 C5 C6) ; END_IF_ZERO
-
-  (chord C1 C2 C3) ; IF_ZERO
+  (chord G2 A3 B3) ; CMD_IF
+  (chord C2 F2) ; COND_EQUAL
   (chord C1 C2) ; whether both C1 and C2 are zero
 
-  (chord C2 C3 C4) ; THEN
-  (chord A3 A4 A5) ; ESTABLISH (C1)
+  (chord G2 B3 C3) ; CMD_THEN
+  (chord D2 E2 F2) ; CMD_ESTABLISH
   (chord C1)
-  (chord A1 A2 A3) ; B3 = ADD B1 B2
+  (chord C2 D2 E2) ; CMD_ADD
   (chord B1 B2)
   (chord B3)
-  (chord A1 A2 A8) ; PRINT_INT B3
+  (chord E2 F2 G2) ; CMD_PRINT_INT
   (chord B3)
 
-  (chord C3 C4 C5) ; ELSE
-  (chord A5 A6 A7) ; RESET (B4)
+  (chord G2 C3 D3) ; CMD_ELSE
+  (chord D2 F2 G2) ; CMD_RESET
   (chord B4)
-  (chord A1 A2 A8) ; PRINT_INT B3
+  (chord E2 F2 G2) ; CMD_PRINT_INT
   (chord B4)
 
-  (chord C4 C5 C6) ; END_IF_ZERO
-  )
+  (chord G2 D3 E3)) ; CMD_END_IF
+
 

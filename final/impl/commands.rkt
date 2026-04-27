@@ -16,6 +16,8 @@
       ((0 2 3) . CMD_SUB) ; (chord C2 E2 F2) ; CMD_SUB
       ((0 3 4) . CMD_MUL) ; (chord C2 F2 G2) ; CMD_MUL
       ((0 4 5) . CMD_DIV) ; (chord C2 G2 A3) ; CMD_DIV
+      
+      ((0 5 6) . CMD_BITWISE_AND) ; (chord C2 A3 B3) ; CMD_BITWISE_AND
 
       ((1 2 3) . CMD_ESTABLISH) ; (chord D2 E2 F2) ; CMD_ESTABLISH
       ((1 3 4) . CMD_RESET) ; (chord D2 F2 G2) ; CMD_RESET
@@ -68,9 +70,9 @@
   (define inst-to-num (for/list ([e inst]) (index-of key-signature e)))
   (hash-ref
    (make-hash
-    '(((0 1) . COND_LESS_THAN) ; (chord C2 D2)
-      ((0 2) . COND_GREATER_THAN) ; (chord C2 E2)
-      ((0 3) . COND_EQUAL) ; (chord C2 F2)
+    '(((0 1) . COND_LESS_THAN) ; (chord C2 D2) ; COND_LESS_THAN
+      ((0 2) . COND_GREATER_THAN) ; (chord C2 E2) ; COND_GREATER_THAN
+      ((0 3) . COND_EQUAL) ; (chord C2 F2) ; COND_EQUAL
       ((0 4) . COND_LESS_THAN_EQUAL) ; (chord C2 G2)
       ((0 5) . COND_GREATER_THAN_EQUAL))) ; (chord C2 A3)
    inst-to-num))
