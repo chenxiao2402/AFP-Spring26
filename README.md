@@ -25,7 +25,7 @@ chord ::= (chord note ...)
 note ::= all standard SPN notes for an 88-key keyboard (A0-C8)
 ```
 
-Forte supports multiple staves; thi provides cleaner score output that more accurately matches how scores are written on paper and how they are read.
+Forte supports multiple staves; this provides cleaner score output that more accurately matches how scores are written on paper and how they are read.
 However, contrary to how musical scores are played, multiple staves are not executed in parallel.
 They are executed sequentially, so there is no processing benefit to splitting a hand-written Forte program onto a second staff.
 
@@ -34,5 +34,7 @@ They are executed sequentially, so there is no processing benefit to splitting a
 ## Code and Documentation
 
 The source code of the Forte language is avaiable at the [impl](https://github.com/chenxiao2402/AFP-Spring26/tree/main/final/impl) folder.
+
+An updated list of chord-to-instruction mapping is available in [commands.rkt](https://github.com/chenxiao2402/AFP-Spring26/blob/main/final/impl/commands.rkt).
 
 The reader is also encouraged to explore more details about Forte in this [document](https://github.com/chenxiao2402/AFP-Spring26/blob/main/final/Forte-Document.pdf).

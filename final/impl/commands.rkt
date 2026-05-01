@@ -37,9 +37,7 @@
       ((4 6 7) . CMD_THEN) ; (chord G2 B3 C3) ; CMD_THEN
       ((4 7 8) . CMD_ELSE) ; (chord G2 C3 D3) ; CMD_ELSE
       ((4 8 9) . CMD_END_IF) ; (chord G2 D3 E3) ; CMD_END_IF
-
-      ((C1 C2 E3) . CMD_IF_ZERO) ; (chord _)
-      ((C4 C5 E6) . CMD_END_IF_ZERO)))) ; (chord _)
+      )))
 
 (define function-stack (cons (make-hash) empty))
 

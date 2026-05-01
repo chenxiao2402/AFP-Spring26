@@ -23,20 +23,14 @@
  (chord B3 D3 E3) ; CMD_END_FUNC_DEF
  (chord E4)
  (chord D2 E2 F2) ; CMD_ESTABLISH
- (chord A1 C2 E2 B3 E3)
+ (chord A1 A2 E2 B3 C3 D3 E3)
  (chord C2 D2 E2) ; CMD_ADD
- (chord A1 C2)
- (chord A1 C2)
- (chord C2 D2 E2) ; CMD_ADD
- (chord A1 C2 E2)
- (chord C2 E4)
- (chord C2 D2 E2) ; CMD_ADD
- (chord A1 C2)
- (chord C2 E4)
+ (chord A1 A2 E2 B3 C3 D3 E3)
+ (chord C3)
  (chord E2 F2 G2) ; CMD_PRINT_INT
- (chord C2)
+ (chord C3)
  (chord C6 C7) ; FUNCTION_CALL
- (chord C2)
+ (chord C3)
  (chord A2)
  (chord E2 F2 G2) ; CMD_PRINT_INT
  (chord A2))

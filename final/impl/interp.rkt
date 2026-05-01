@@ -40,8 +40,7 @@
         (interp-cond insts (Cond empty empty empty) 0)]
        [(or 'CMD_WHILE)
         (interp-while insts (While empty empty) 0)]
-       [else
-        (error state)])]))
+       [else (error state)])]))
 
 
 ;;;
@@ -189,7 +188,6 @@
         (interp-func rest index)]
        ['DEF_FUNC_BODY
         (define current-index index)
-
         (when (eqv? (chord-to-command inst) 'CMD_START_FUNC_DEF) (set! index (add1 current-index)))
         (when (eqv? (chord-to-command inst) 'CMD_END_FUNC_DEF) (set! index (sub1 current-index)))
         
@@ -253,9 +251,7 @@
               (interp-cond rest cond index)))]
        ['DEF_COND_THEN
         (define cond-then (Cond-then cond))
-
         (define current-index index)
-
         (when (eqv? (chord-to-command inst) 'CMD_IF) (set! index (add1 current-index)))
         (when (eqv? (chord-to-command inst) 'CMD_END_IF) (set! index (sub1 current-index)))
 
@@ -269,9 +265,7 @@
               (interp-cond rest cond index)))]
        ['DEF_COND_ELSE
         (define cond-else (Cond-else cond))
-
         (define current-index index)
-
         (when (eqv? (chord-to-command inst) 'CMD_IF) (set! index (add1 current-index)))
         (when (eqv? (chord-to-command inst) 'CMD_END_IF) (set! index (sub1 current-index)))
 
@@ -348,7 +342,6 @@
               (interp-while rest while index)))]
        ['DEF_WHILE_BODY
         (define while-body (While-body while))
-        
         (define current-index index)
         (when (eqv? (chord-to-command inst) 'CMD_WHILE) (set! index (add1 current-index)))
         (when (eqv? (chord-to-command inst) 'CMD_END_WHILE) (set! index (sub1 current-index)))
